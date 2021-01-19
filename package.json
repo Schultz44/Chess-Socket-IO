@@ -1,0 +1,14 @@
+{
+    "name": "socketio-node",
+    "version": "0.0.1",
+    "description": "test socket.io server",
+    "scripts": {
+        "server": "nodemon index.js"
+    },
+    "dependencies": {
+        "@types/socket.io": "^2.1.12",
+        "express": "^4.17.1",
+        "nodemon": "^2.0.6",
+        "socket.io": "^3.0.4"
+    }
+}
