@@ -1,3 +1,8 @@
+const os = require('os');
+const networkInterfaces = os.networkInterfaces();
+const arr = networkInterfaces['Wi-Fi'];
+// const ip = arr[1].address
+
 const app = require('express')();
 const http = require('http').createServer(app);
 const path = require('path');
@@ -11,6 +16,7 @@ const io = require('socket.io')(http, {
 });
 http.listen(3000, () => {
     console.log('listening on *:3000');
+    console.log(arr);
 });
 // const { Server } = require('socket.io');
 // const io = new Server;
@@ -53,6 +59,10 @@ const lobbyNsp = io.of('/lobby').on('connection', (socket) => {
 
         console.log(users);
     })
+    socket.on('Game Users', data => {
+        console.log(lobbyNsp.adapter);
+        socket.emit('Game Users', lobbyNsp.adapter.rooms)
+    })
     socket.on('Create Room', (data) => {
         
         console.log(data);
@@ -64,22 +74,22 @@ const lobbyNsp = io.of('/lobby').on('connection', (socket) => {
             roomName: data.roomName,
             roomKey: data.roomKey
         }
-        console.log('++++++++++++++++++++++++++++');
+        // console.log('++++++++++++++++++++++++++++');
         users.push(user)
         socket.join(user.roomName);
         socket.emit('Created Room', user)
         socket.broadcast.to(user.roomName).emit(`User Joined ${user.roomName}`, `${user.user} has joined the room`);
         socket.broadcast.emit('Room Events', user)
         rooms.push(user);
-        console.log('*****************************************************************');
+        // console.log('*****************************************************************');
         // console.log(socket.to(user.roomName).client.sockets);
         // console.log(socket.in(user.roomName).adapter.rooms);
-        console.log(lobbyNsp.adapter.rooms.get(`${user.roomName}`));
-        console.log(users);
+        // console.log(lobbyNsp.adapter.rooms.get(`${user.roomName}`));
+        // console.log(users);
         // console.log(io.of('/lobby').clients(user.roomNSame));
     })
     socket.on('Join Room', ({ room }) => {
-        console.log('Join Room:',room);
+        // console.log('Join Room:',room);
         // const user = {
         //     user: username,
         //     id: socket.id,
@@ -93,9 +103,9 @@ const lobbyNsp = io.of('/lobby').on('connection', (socket) => {
         // // Broadcast when a user joins
         // socket.broadcast.to(user.room).emit('Joined', `User joined ${user.room}`)
     })
-    socket.on('Played Piece', ({piece, room}) => {
-        console.log('97: ', room.roomName);
-        socket.broadcast.to(room.roomName).emit('Update Board State', {piece, room})
+    socket.on('Played Piece', ({piece, room, previousPieceLocation}) => {
+        console.log('97: ', piece, previousPieceLocation);
+        socket.broadcast.to(room.roomName).emit('Update Board State', {piece, room, previousPieceLocation})
     })
     socket.emit('Available Rooms', rooms);
     //Increase roomno 2 clients are present in a room.
@@ -134,7 +144,7 @@ io.on('connection', (socket) => {
         socket.emit('board-object', board)
         socket.broadcast.emit('board-object', 'Another user moved a piece')
     })
-    console.log('a user connected');
+    console.log(`a user connected: SOCKET=${socket.id}`);
     socket.on('disconnect', () => {
         console.log('user disconnected');
     });
