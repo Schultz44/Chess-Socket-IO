@@ -11,12 +11,13 @@ const { Socket } = require("socket.io");
 // cors (Cross-Origin Resource Sharing) allows for other origins to read the information
 const io = require("socket.io")(httpServer, {
   cors: {
-    origin: "http://localhost:4200",
+    origin: "http://localhost:4201",
     methods: ["GET", "POST"],
   },
 });
 
 //handlers
+const connectionHandler = require("./connection-handler");
 const lobbyHandler = require("./lobby-handler");
 
 httpServer.listen(3000, () => {
@@ -42,19 +43,64 @@ let users = [];
 let rooms = [];
 // middleware which checks the username and allows the connection
 io.use((socket, next) => {
+  socket.on("is_username_valid", (username) => {
+    console.log(":::-::: ", socket.handshake.auth.username, " :::-:::");
+  });
+  // socket.handshake.auth ----> is socket.auth on the client in auth.service
+  // connectionHandler.validUser(socket);
   const username = socket.handshake.auth.username;
+  console.log("Handshake: ", username);
+  console.log("======================================");
   if (!username) {
-    socket.emit("invalid_username", "Invalid username");
+    socket.emit("is_username_valid", {
+      valid: false,
+      err: "Invalid username ",
+      users: users,
+    });
+    console.log(60);
     next();
   } else if (users.find((user) => user.username === username)) {
-    socket.emit("invalid_username", "Username already exists");
+    socket.emit("is_username_valid", {
+      valid: false,
+      err: "Username already exists ",
+      users: users,
+    });
+    console.log(68);
     next();
   } else {
     socket.username = username;
     users.push({ userID: socket.id, username: socket.username });
-    socket.emit("invalid_username", null);
+    socket.emit("is_username_valid", {
+      valid: true,
+      user: { userID: socket.id, username: socket.username },
+      users: users,
+    });
+    console.log(78);
     next();
   }
+});
+io.on("connection", (socket) => {
+  // require('./connection-handler').connection(socket)
+  // return io
+  console.log("::::: - IO CONNECTION - :::::");
+
+  // socket.on("is_username_valid", (username) => {
+  //   console.log("::: ::: ", username, " ::: :::");
+
+  //   socket.emit("is_username_valid", {
+  //     valid: false,
+  //     err: "This socket is not working correctly.. Please try again later",
+  //   });
+  // });
+  console.log(users);
+  connectionHandler.disconnect(socket);
+  connectionHandler.signOut(socket, users);
+  // connectionHandler.signOut(socket);
+  // socket.on("rooms", () => {
+  //   console.log(socket.rooms);
+  //   console.log(socket.id);
+  //   socket.emit("test", socket.rooms);
+  // });
 });
 
 const lobbyNsp = io.of("/lobby");
@@ -72,6 +118,10 @@ lobbyNsp.on("connection", (socket) => {
 
   // socket.broadcast.emit('Room Events', users)
 
+  socket.on("test", (value) => {
+    console.log("test: ", value);
+    socket.emit("test", value + " EMIT");
+  });
   lobbyHandler.logRooms(socket, lobbyNsp);
 
   lobbyHandler.resetAllRooms(socket);
@@ -100,7 +150,7 @@ lobbyNsp.on("connection", (socket) => {
 
   //     roomno++
   // }
-  console.log(socket.id);
+  console.log("SOCKET_ID: ", socket.id);
   //Send this event to everyone in the room.
   lobbyNsp
     .to("room-" + roomno)
@@ -110,14 +160,9 @@ lobbyNsp.on("connection", (socket) => {
   console.log("====================================");
   // console.log(socket.in('room-2').adapter.nsp.sockets);
   // console.log(roomno);
-  console.log(socket.rooms);
+  console.log("SOCKET_ROOMS: ", socket.rooms);
   // console.log( Array.from(socket.rooms)[1]);
   console.log("------------------------------------");
   // Gets the amount of users in the room below
   // console.log(socket.in(`room-${roomno}`).adapter.sids.size);
-});
-io.on("connection", (socket) => {
-  // require('./connection-handler').connection(socket)
-  // return io
-  require("./connection-handler").disconnect(socket, users);
 });
