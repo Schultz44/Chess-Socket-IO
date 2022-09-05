@@ -22,18 +22,15 @@ module.exports = {
       console.log("hi");
     });
   },
-  disconnect: (disconnect = (socket, users = []) => {
+  disconnect: (disconnect = (socket, users = [], fun = T) => {
     socket.on("disconnect", () => {
-      // console.log(socket.id);
-      // console.log(socket.rooms);
-      // console.log(users);
-      // users.splice(
-      //   users.findIndex(
-      //     (username) => username === socket.handshake.auth.username
-      //   ),
-      //   1
-      // );
+      const foundSocket =
+        users.findIndex((user) => user.userId === socket.id) > -1;
+      if (foundSocket) {
+        users = users.splice(foundSocket, 1);
+      }
       console.log("user disconnected: ", socket.id);
+      fun(users);
     });
   }),
   board: (board = function (socket) {
@@ -78,10 +75,10 @@ module.exports = {
       // next();
     } else {
       socket.username = username;
-      users.push({ userID: socket.id, username: socket.username });
+      users.push({ userId: socket.id, username: socket.username });
       socket.emit("is_username_valid", {
         valid: true,
-        user: { userID: socket.id, username: socket.username },
+        user: { userId: socket.id, username: socket.username },
         users: users,
       });
       // next();

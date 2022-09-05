@@ -57,7 +57,6 @@ io.use((socket, next) => {
       err: "Invalid username ",
       users: users,
     });
-    console.log(60);
     next();
   } else if (users.find((user) => user.username === username)) {
     socket.emit("is_username_valid", {
@@ -65,17 +64,15 @@ io.use((socket, next) => {
       err: "Username already exists ",
       users: users,
     });
-    console.log(68);
     next();
   } else {
     socket.username = username;
-    users.push({ userID: socket.id, username: socket.username });
+    users.push({ userId: socket.id, username: socket.username });
     socket.emit("is_username_valid", {
       valid: true,
-      user: { userID: socket.id, username: socket.username },
+      user: { userId: socket.id, username: socket.username },
       users: users,
     });
-    console.log(78);
     next();
   }
 });
@@ -83,7 +80,7 @@ io.on("connection", (socket) => {
   // require('./connection-handler').connection(socket)
   // return io
   console.log("::::: - IO CONNECTION - :::::");
-
+  // console.log(users);
   // socket.on("is_username_valid", (username) => {
   //   console.log("::: ::: ", username, " ::: :::");
 
@@ -92,8 +89,9 @@ io.on("connection", (socket) => {
   //     err: "This socket is not working correctly.. Please try again later",
   //   });
   // });
-  console.log(users);
-  connectionHandler.disconnect(socket);
+  connectionHandler.disconnect(socket, users, (newUsers) => {
+    users = newUsers;
+  });
   connectionHandler.signOut(socket, users);
   // connectionHandler.signOut(socket);
   // socket.on("rooms", () => {
@@ -113,7 +111,7 @@ lobbyNsp.use((socket, next) => {
   next();
 });
 lobbyNsp.on("connection", (socket) => {
-  console.log("lobby connected");
+  // console.log("lobby connected");
   lobbyHandler.leaveRoom(socket, rooms);
 
   // socket.broadcast.emit('Room Events', users)
